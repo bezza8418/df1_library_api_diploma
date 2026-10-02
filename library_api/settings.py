@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Local
+    'users',
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
@@ -184,3 +186,5 @@ LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
+
+AUTH_USER_MODEL = 'users.User'
