@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -37,3 +38,64 @@ class Genre(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Book(models.Model):
+    """Книга в библиотеке."""
+
+    title = models.CharField('Название', max_length=255)
+    authors = models.ManyToManyField(
+        Author,
+        related_name='books',
+        verbose_name='Авторы',
+    )
+    genres = models.ManyToManyField(
+        Genre,
+        related_name='books',
+        verbose_name='Жанры',
+    )
+    isbn = models.CharField(
+        'ISBN',
+        max_length=20,
+        unique=True,
+        blank=True,
+        null=True,
+    )
+    publication_year = models.PositiveIntegerField(
+        'Год издания',
+        null=True,
+        blank=True,
+    )
+    publisher = models.CharField('Издательство', max_length=200, blank=True)
+    description = models.TextField('Описание', blank=True)
+    total_copies = models.PositiveIntegerField(
+        'Всего экземпляров',
+        default=1,
+        validators=[MinValueValidator(1)],
+    )
+    available_copies = models.PositiveIntegerField(
+        'Доступно экземпляров',
+        default=1,
+        validators=[MinValueValidator(0)],
+    )
+    created_at = models.DateTimeField('Дата добавления', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Книга'
+        verbose_name_plural = 'Книги'
+        ordering = ['title']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(available_copies__lte=models.F('total_copies')),
+                name='available_copies_lte_total_copies',
+            ),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_available(self):
+        """Есть ли доступные экземпляры."""
+        return self.available_copies > 0
