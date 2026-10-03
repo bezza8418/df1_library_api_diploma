@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Author, Book, Genre
+from .models import Author, Book, Genre, Loan
 
 
 @admin.register(Author)
@@ -31,3 +31,21 @@ class BookAdmin(admin.ModelAdmin):
     filter_horizontal = ('authors', 'genres')
     ordering = ('title',)
     readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(Loan)
+class LoanAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'book',
+        'user',
+        'loan_date',
+        'due_date',
+        'return_date',
+        'status',
+    )
+    list_filter = ('status', 'loan_date', 'due_date')
+    search_fields = ('book__title', 'user__email')
+    readonly_fields = ('created_at', 'updated_at', 'loan_date')
+    ordering = ('-loan_date', '-id')
+    date_hierarchy = 'loan_date'

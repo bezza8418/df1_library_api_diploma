@@ -1,6 +1,11 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from datetime import timedelta
+
+from django.conf import settings
+from django.utils import timezone
+
 
 class Author(models.Model):
     """Автор книги."""
@@ -99,3 +104,75 @@ class Book(models.Model):
     def is_available(self):
         """Есть ли доступные экземпляры."""
         return self.available_copies > 0
+
+
+class Loan(models.Model):
+    """Выдача книги читателю."""
+
+    STATUS_ISSUED = 'issued'
+    STATUS_RETURNED = 'returned'
+    STATUS_LOST = 'lost'
+    STATUS_CHOICES = [
+        (STATUS_ISSUED, 'Выдана'),
+        (STATUS_RETURNED, 'Возвращена'),
+        (STATUS_LOST, 'Потеряна'),
+    ]
+
+    DEFAULT_LOAN_PERIOD_DAYS = 14
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='loans',
+        verbose_name='Читатель',
+    )
+    book = models.ForeignKey(
+        Book,
+        on_delete=models.CASCADE,
+        related_name='loans',
+        verbose_name='Книга',
+    )
+    loan_date = models.DateField('Дата выдачи', auto_now_add=True)
+    due_date = models.DateField('Плановая дата возврата', null=True, blank=True)
+    return_date = models.DateField('Дата возврата', null=True, blank=True)
+    status = models.CharField(
+        'Статус',
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_ISSUED,
+    )
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Выдача'
+        verbose_name_plural = 'Выдачи'
+        ordering = ['-loan_date', '-id']
+
+    def __str__(self):
+        return f'{self.book.title} → {self.user.email} ({self.get_status_display()})'
+
+    def save(self, *args, **kwargs):
+        """При создании, если не указан due_date — ставим loan_date + 14 дней."""
+        if not self.due_date:
+            self.due_date = timezone.now().date() + timedelta(
+                days=self.DEFAULT_LOAN_PERIOD_DAYS
+            )
+        super().save(*args, **kwargs)
+
+    @property
+    def is_overdue(self):
+        """Просрочена ли выдача (не возвращена и due_date в прошлом)."""
+        if self.status != self.STATUS_ISSUED:
+            return False
+        return self.due_date < timezone.now().date()
+
+    @property
+    def effective_status(self):
+        """
+        Эффективный статус с учётом просрочки.
+        Используется в сериализаторе, чтобы показать "overdue" без хранения в БД.
+        """
+        if self.is_overdue:
+            return 'overdue'
+        return self.status
