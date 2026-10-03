@@ -13,6 +13,16 @@ class AuthorViewSet(viewsets.ModelViewSet):
     serializer_class = AuthorSerializer
     permission_classes = (IsLibrarianOrReadOnly,)
 
+    # Фильтрация (точное совпадение)
+    filterset_fields = ('first_name', 'last_name')
+
+    # Поиск (частичное совпадение, регистронезависимый)
+    search_fields = ('first_name', 'last_name', 'biography')
+
+    # Сортировка
+    ordering_fields = ('last_name', 'first_name', 'birth_date')
+    ordering = ('last_name', 'first_name')  # по умолчанию
+
 
 class GenreViewSet(viewsets.ModelViewSet):
     """CRUD для жанров. Читать — все авторизованные, изменять — только библиотекарь."""
@@ -20,3 +30,8 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsLibrarianOrReadOnly,)
+
+    filterset_fields = ('name',)
+    search_fields = ('name', 'description')
+    ordering_fields = ('name',)
+    ordering = ('name',)
