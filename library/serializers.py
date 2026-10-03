@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from .models import Author, Book, Genre
@@ -76,6 +78,30 @@ class BookWriteSerializer(serializers.ModelSerializer):
             'total_copies',
             'available_copies',
         )
+
+    def validate_isbn(self, value):
+        """Проверка формата ISBN (10 или 13 цифр, опционально с дефисами)."""
+        if not value:
+            return value
+        # Убираем дефисы и пробелы для проверки
+        cleaned = value.replace('-', '').replace(' ', '')
+        if not re.fullmatch(r'\d{10}|\d{13}', cleaned):
+            raise serializers.ValidationError(
+                'ISBN должен содержать 10 или 13 цифр (можно с дефисами).'
+            )
+        return value
+
+    def validate_publication_year(self, value):
+        """Год издания не может быть в будущем."""
+        if value is None:
+            return value
+        from django.utils import timezone
+        current_year = timezone.now().year
+        if value > current_year:
+            raise serializers.ValidationError(
+                f'Год издания не может быть больше {current_year}.'
+            )
+        return value
 
     def validate(self, attrs):
         total = attrs.get('total_copies', getattr(self.instance, 'total_copies', 1))

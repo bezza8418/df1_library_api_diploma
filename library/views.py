@@ -2,6 +2,7 @@ from rest_framework import viewsets
 
 from users.permissions import IsLibrarianOrReadOnly
 
+from .filters import BookFilter
 from .models import Author, Book, Genre
 from .serializers import (
     AuthorSerializer,
@@ -47,14 +48,19 @@ class BookViewSet(viewsets.ModelViewSet):
 
     queryset = Book.objects.prefetch_related('authors', 'genres').all()
     permission_classes = (IsLibrarianOrReadOnly,)
-
-    filterset_fields = ('publication_year', 'publisher', 'authors', 'genres')
-    search_fields = ('title', 'isbn', 'publisher', 'description', 'authors__last_name', 'authors__first_name')
+    filterset_class = BookFilter  # ← изменили с filterset_fields на filterset_class
+    search_fields = (
+        'title',
+        'isbn',
+        'publisher',
+        'description',
+        'authors__last_name',
+        'authors__first_name',
+    )
     ordering_fields = ('title', 'publication_year', 'created_at')
     ordering = ('title',)
 
     def get_serializer_class(self):
-        """Для чтения — BookReadSerializer, для записи — BookWriteSerializer."""
         if self.action in ('list', 'retrieve'):
             return BookReadSerializer
         return BookWriteSerializer
