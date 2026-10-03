@@ -2,8 +2,13 @@ from rest_framework import viewsets
 
 from users.permissions import IsLibrarianOrReadOnly
 
-from .models import Author, Genre
-from .serializers import AuthorSerializer, GenreSerializer
+from .models import Author, Book, Genre
+from .serializers import (
+    AuthorSerializer,
+    BookReadSerializer,
+    BookWriteSerializer,
+    GenreSerializer,
+)
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
@@ -35,3 +40,21 @@ class GenreViewSet(viewsets.ModelViewSet):
     search_fields = ('name', 'description')
     ordering_fields = ('name',)
     ordering = ('name',)
+
+
+class BookViewSet(viewsets.ModelViewSet):
+    """CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь."""
+
+    queryset = Book.objects.prefetch_related('authors', 'genres').all()
+    permission_classes = (IsLibrarianOrReadOnly,)
+
+    filterset_fields = ('publication_year', 'publisher', 'authors', 'genres')
+    search_fields = ('title', 'isbn', 'publisher', 'description', 'authors__last_name', 'authors__first_name')
+    ordering_fields = ('title', 'publication_year', 'created_at')
+    ordering = ('title',)
+
+    def get_serializer_class(self):
+        """Для чтения — BookReadSerializer, для записи — BookWriteSerializer."""
+        if self.action in ('list', 'retrieve'):
+            return BookReadSerializer
+        return BookWriteSerializer
