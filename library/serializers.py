@@ -1,7 +1,8 @@
 import re
 
-from users.serializers import UserSerializer
 from rest_framework import serializers
+
+from users.serializers import UserSerializer
 
 from .models import Author, Book, Genre, Loan
 
@@ -157,3 +158,40 @@ class LoanWriteSerializer(serializers.ModelSerializer):
             'return_date',
             'status',
         )
+
+    def validate_user(self, value):
+        """Выдавать можно только читателям."""
+        if value.role != 'reader':
+            raise serializers.ValidationError(
+                'Выдача книги возможна только читателю.'
+            )
+        return value
+
+    def validate(self, attrs):
+        """Проверки при создании выдачи."""
+        # При обновлении не проверяем
+        if self.instance is not None:
+            return attrs
+
+        book = attrs.get('book')
+        user = attrs.get('user')
+
+        # Проверка: есть ли доступные экземпляры
+        if book and book.available_copies < 1:
+            raise serializers.ValidationError({
+                'book': 'Нет доступных экземпляров этой книги.',
+            })
+
+        # Проверка: нет ли у читателя активной выдачи этой же книги
+        if book and user:
+            active_exists = Loan.objects.filter(
+                user=user,
+                book=book,
+                status=Loan.STATUS_ISSUED,
+            ).exists()
+            if active_exists:
+                raise serializers.ValidationError({
+                    'book': 'У этого читателя уже есть активная выдача данной книги.',
+                })
+
+        return attrs

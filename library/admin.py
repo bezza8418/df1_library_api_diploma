@@ -20,6 +20,7 @@ class GenreAdmin(admin.ModelAdmin):
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
     list_display = (
+        'id',                    # ← добавили
         'title',
         'publication_year',
         'publisher',

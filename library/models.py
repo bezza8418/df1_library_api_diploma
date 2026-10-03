@@ -1,9 +1,8 @@
-from django.core.validators import MinValueValidator
-from django.db import models
-
 from datetime import timedelta
 
 from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db import models
 from django.utils import timezone
 
 
@@ -176,3 +175,83 @@ class Loan(models.Model):
         if self.is_overdue:
             return 'overdue'
         return self.status
+
+    def return_book(self):
+        """Вернуть книгу."""
+        if self.status != self.STATUS_ISSUED:
+            raise ValueError(
+                f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".'
+            )
+
+        self.status = self.STATUS_RETURNED
+        self.return_date = timezone.now().date()
+        self.save(update_fields=['status', 'return_date', 'updated_at'])
+
+        book = self.book
+        book.available_copies = min(
+            book.available_copies + 1,
+            book.total_copies,
+        )
+        book.save(update_fields=['available_copies', 'updated_at'])
+
+    def mark_lost(self):
+        """Отметить книгу как потерянную."""
+        if self.status != self.STATUS_ISSUED:
+            raise ValueError(
+                f'Нельзя отметить как потерянную выдачу со статусом "{self.get_status_display()}".'
+            )
+
+        self.status = self.STATUS_LOST
+        self.save(update_fields=['status', 'updated_at'])
+
+        book = self.book
+        book.total_copies = max(book.total_copies - 1, 0)
+        book.save(update_fields=['total_copies', 'updated_at'])
+
+    # ====== БИЗНЕС-ЛОГИКА ======
+
+    def return_book(self):
+        """
+        Вернуть книгу.
+        - Проверяет, что выдача активна.
+        - Ставит return_date = сегодня.
+        - Меняет статус на 'returned'.
+        - Увеличивает available_copies у книги.
+        """
+        if self.status != self.STATUS_ISSUED:
+            raise ValueError(
+                f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".'
+            )
+
+        self.status = self.STATUS_RETURNED
+        self.return_date = timezone.now().date()
+        self.save(update_fields=['status', 'return_date', 'updated_at'])
+
+        # Возвращаем экземпляр в фонд
+        book = self.book
+        book.available_copies = min(
+            book.available_copies + 1,
+            book.total_copies,
+        )
+        book.save(update_fields=['available_copies', 'updated_at'])
+
+    def mark_lost(self):
+        """
+        Отметить книгу как потерянную.
+        - Проверяет, что выдача активна.
+        - Меняет статус на 'lost'.
+        - НЕ возвращает экземпляр в фонд (книга потеряна).
+        - Уменьшает total_copies (книга выбывает из фонда).
+        """
+        if self.status != self.STATUS_ISSUED:
+            raise ValueError(
+                f'Нельзя отметить как потерянную выдачу со статусом "{self.get_status_display()}".'
+            )
+
+        self.status = self.STATUS_LOST
+        self.save(update_fields=['status', 'updated_at'])
+
+        # Книга потеряна — выбывает из фонда
+        book = self.book
+        book.total_copies = max(book.total_copies - 1, 0)
+        book.save(update_fields=['total_copies', 'updated_at'])

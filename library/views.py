@@ -1,4 +1,6 @@
-from rest_framework import viewsets
+from rest_framework import status as http_status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from users.permissions import IsLibrarian, IsLibrarianOrReadOnly
 
@@ -21,15 +23,10 @@ class AuthorViewSet(viewsets.ModelViewSet):
     serializer_class = AuthorSerializer
     permission_classes = (IsLibrarianOrReadOnly,)
 
-    # Фильтрация (точное совпадение)
     filterset_fields = ('first_name', 'last_name')
-
-    # Поиск (частичное совпадение, регистронезависимый)
     search_fields = ('first_name', 'last_name', 'biography')
-
-    # Сортировка
     ordering_fields = ('last_name', 'first_name', 'birth_date')
-    ordering = ('last_name', 'first_name')  # по умолчанию
+    ordering = ('last_name', 'first_name')
 
 
 class GenreViewSet(viewsets.ModelViewSet):
@@ -50,7 +47,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
     queryset = Book.objects.prefetch_related('authors', 'genres').all()
     permission_classes = (IsLibrarianOrReadOnly,)
-    filterset_class = BookFilter  # ← изменили с filterset_fields на filterset_class
+    filterset_class = BookFilter
     search_fields = (
         'title',
         'isbn',
@@ -77,7 +74,6 @@ class LoanViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = (IsLibrarianOrReadOnly,)
-
     filterset_fields = ('status', 'book', 'user')
     search_fields = ('book__title', 'user__email')
     ordering_fields = ('loan_date', 'due_date', 'return_date')
@@ -95,3 +91,38 @@ class LoanViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return LoanReadSerializer
         return LoanWriteSerializer
+
+    def perform_create(self, serializer):
+        """При создании выдачи уменьшаем available_copies у книги."""
+        loan = serializer.save()
+        book = loan.book
+        book.available_copies = max(book.available_copies - 1, 0)
+        book.save(update_fields=['available_copies', 'updated_at'])
+
+    @action(detail=True, methods=['post'], permission_classes=[IsLibrarian])
+    def return_book(self, request, pk=None):
+        """Вернуть книгу."""
+        loan = self.get_object()
+        try:
+            loan.return_book()
+        except ValueError as e:
+            return Response(
+                {'detail': str(e)},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = LoanReadSerializer(loan)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsLibrarian])
+    def mark_lost(self, request, pk=None):
+        """Отметить книгу как потерянную."""
+        loan = self.get_object()
+        try:
+            loan.mark_lost()
+        except ValueError as e:
+            return Response(
+                {'detail': str(e)},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = LoanReadSerializer(loan)
+        return Response(serializer.data)
