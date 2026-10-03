@@ -1,8 +1,9 @@
 import re
 
+from users.serializers import UserSerializer
 from rest_framework import serializers
 
-from .models import Author, Book, Genre
+from .models import Author, Book, Genre, Loan
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -114,3 +115,45 @@ class BookWriteSerializer(serializers.ModelSerializer):
                 'available_copies': 'Доступных экземпляров не может быть больше общего количества.',
             })
         return attrs
+
+
+# ============ ВЫДАЧИ ============
+
+class LoanReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения выдачи — с вложенными данными."""
+
+    user = UserSerializer(read_only=True)
+    book = BookReadSerializer(read_only=True)
+    effective_status = serializers.CharField(read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Loan
+        fields = (
+            'id',
+            'user',
+            'book',
+            'loan_date',
+            'due_date',
+            'return_date',
+            'status',
+            'effective_status',
+            'is_overdue',
+            'created_at',
+            'updated_at',
+        )
+
+
+class LoanWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания/обновления выдачи — принимает ID."""
+
+    class Meta:
+        model = Loan
+        fields = (
+            'id',
+            'user',
+            'book',
+            'due_date',
+            'return_date',
+            'status',
+        )

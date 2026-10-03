@@ -1,14 +1,16 @@
 from rest_framework import viewsets
 
-from users.permissions import IsLibrarianOrReadOnly
+from users.permissions import IsLibrarian, IsLibrarianOrReadOnly
 
 from .filters import BookFilter
-from .models import Author, Book, Genre
+from .models import Author, Book, Genre, Loan
 from .serializers import (
     AuthorSerializer,
     BookReadSerializer,
     BookWriteSerializer,
     GenreSerializer,
+    LoanReadSerializer,
+    LoanWriteSerializer,
 )
 
 
@@ -64,3 +66,32 @@ class BookViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return BookReadSerializer
         return BookWriteSerializer
+
+
+class LoanViewSet(viewsets.ModelViewSet):
+    """
+    CRUD для выдач.
+
+    - Библиотекарь видит все выдачи, может создавать/менять.
+    - Читатель видит только свои выдачи (read-only).
+    """
+
+    permission_classes = (IsLibrarianOrReadOnly,)
+
+    filterset_fields = ('status', 'book', 'user')
+    search_fields = ('book__title', 'user__email')
+    ordering_fields = ('loan_date', 'due_date', 'return_date')
+    ordering = ('-loan_date', '-id')
+
+    def get_queryset(self):
+        """Читатель видит только свои выдачи, библиотекарь — все."""
+        queryset = Loan.objects.select_related('user', 'book').all()
+        user = self.request.user
+        if user.is_authenticated and user.is_reader:
+            return queryset.filter(user=user)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return LoanReadSerializer
+        return LoanWriteSerializer
