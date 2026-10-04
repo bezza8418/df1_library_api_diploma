@@ -177,40 +177,6 @@ class Loan(models.Model):
         return self.status
 
     def return_book(self):
-        """Вернуть книгу."""
-        if self.status != self.STATUS_ISSUED:
-            raise ValueError(
-                f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".'
-            )
-
-        self.status = self.STATUS_RETURNED
-        self.return_date = timezone.now().date()
-        self.save(update_fields=['status', 'return_date', 'updated_at'])
-
-        book = self.book
-        book.available_copies = min(
-            book.available_copies + 1,
-            book.total_copies,
-        )
-        book.save(update_fields=['available_copies', 'updated_at'])
-
-    def mark_lost(self):
-        """Отметить книгу как потерянную."""
-        if self.status != self.STATUS_ISSUED:
-            raise ValueError(
-                f'Нельзя отметить как потерянную выдачу со статусом "{self.get_status_display()}".'
-            )
-
-        self.status = self.STATUS_LOST
-        self.save(update_fields=['status', 'updated_at'])
-
-        book = self.book
-        book.total_copies = max(book.total_copies - 1, 0)
-        book.save(update_fields=['total_copies', 'updated_at'])
-
-    # ====== БИЗНЕС-ЛОГИКА ======
-
-    def return_book(self):
         """
         Вернуть книгу.
         - Проверяет, что выдача активна.
@@ -227,7 +193,6 @@ class Loan(models.Model):
         self.return_date = timezone.now().date()
         self.save(update_fields=['status', 'return_date', 'updated_at'])
 
-        # Возвращаем экземпляр в фонд
         book = self.book
         book.available_copies = min(
             book.available_copies + 1,
@@ -240,8 +205,7 @@ class Loan(models.Model):
         Отметить книгу как потерянную.
         - Проверяет, что выдача активна.
         - Меняет статус на 'lost'.
-        - НЕ возвращает экземпляр в фонд (книга потеряна).
-        - Уменьшает total_copies (книга выбывает из фонда).
+        - Уменьшает total на 1, available обрезается до нового total.
         """
         if self.status != self.STATUS_ISSUED:
             raise ValueError(
@@ -251,7 +215,10 @@ class Loan(models.Model):
         self.status = self.STATUS_LOST
         self.save(update_fields=['status', 'updated_at'])
 
-        # Книга потеряна — выбывает из фонда
         book = self.book
-        book.total_copies = max(book.total_copies - 1, 0)
-        book.save(update_fields=['total_copies', 'updated_at'])
+        new_total = max(book.total_copies - 1, 0)
+        new_available = min(book.available_copies, new_total)
+
+        book.total_copies = new_total
+        book.available_copies = new_available
+        book.save(update_fields=['total_copies', 'available_copies', 'updated_at'])
