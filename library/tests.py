@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Author, Book, Genre
+from .models import Author, Book, Genre, Loan
 
 User = get_user_model()
 
@@ -441,3 +441,320 @@ class BookAPITest(APITestCase):
         self.client.force_authenticate(user=self.librarian)
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+# ==================== API: ВЫДАЧИ ====================
+
+class LoanModelTest(TestCase):
+    """Тесты модели Loan."""
+
+    def setUp(self):
+        self.librarian = User.objects.create_user(
+            email='librarian@test.com',
+            password='StrongPass123!',
+            role='librarian',
+        )
+        self.reader = User.objects.create_user(
+            email='reader@test.com',
+            password='StrongPass123!',
+            role='reader',
+        )
+        self.author = Author.objects.create(first_name='Лев', last_name='Толстой')
+        self.book = Book.objects.create(
+            title='Война и мир',
+            total_copies=3,
+            available_copies=3,
+        )
+        self.book.authors.add(self.author)
+
+    def test_str(self):
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        self.assertIn('Война и мир', str(loan))
+        self.assertIn(self.reader.email, str(loan))
+
+    def test_due_date_auto_set(self):
+        """due_date автоматически = сегодня + 14 дней."""
+        from datetime import timedelta
+        from django.utils import timezone
+
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        expected = timezone.now().date() + timedelta(days=14)
+        self.assertEqual(loan.due_date, expected)
+
+    def test_due_date_manual(self):
+        """Если due_date указан — не перезаписывается."""
+        from datetime import date
+
+        custom_date = date(2026, 12, 31)
+        loan = Loan.objects.create(
+            user=self.reader,
+            book=self.book,
+            due_date=custom_date,
+        )
+        self.assertEqual(loan.due_date, custom_date)
+
+    def test_is_overdue_false_when_issued_future(self):
+        """Не просрочена, если due_date в будущем."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        self.assertFalse(loan.is_overdue)
+
+    def test_is_overdue_true(self):
+        """Просрочена, если due_date в прошлом."""
+        from datetime import timedelta
+        from django.utils import timezone
+
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.due_date = timezone.now().date() - timedelta(days=1)
+        loan.save()
+        self.assertTrue(loan.is_overdue)
+
+    def test_is_overdue_false_when_returned(self):
+        """Не просрочена, если уже возвращена."""
+        from datetime import timedelta
+        from django.utils import timezone
+
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.due_date = timezone.now().date() - timedelta(days=1)
+        loan.status = Loan.STATUS_RETURNED
+        loan.save()
+        self.assertFalse(loan.is_overdue)
+
+    def test_effective_status_issued(self):
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        self.assertEqual(loan.effective_status, 'issued')
+
+    def test_effective_status_overdue(self):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.due_date = timezone.now().date() - timedelta(days=1)
+        loan.save()
+        self.assertEqual(loan.effective_status, 'overdue')
+
+    def test_return_book(self):
+        """Возврат книги: статус, дата, available_copies."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        # Имитируем выдачу: уменьшаем available вручную
+        self.book.available_copies = 2
+        self.book.save()
+
+        loan.return_book()
+
+        loan.refresh_from_db()
+        self.book.refresh_from_db()
+        self.assertEqual(loan.status, Loan.STATUS_RETURNED)
+        self.assertIsNotNone(loan.return_date)
+        self.assertEqual(self.book.available_copies, 3)
+
+    def test_return_book_twice_raises(self):
+        """Повторный возврат → ValueError."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.return_book()
+        with self.assertRaises(ValueError):
+            loan.return_book()
+
+    def test_return_book_not_issued_raises(self):
+        """Нельзя вернуть потерянную книгу."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.status = Loan.STATUS_LOST
+        loan.save()
+        with self.assertRaises(ValueError):
+            loan.return_book()
+
+    def test_mark_lost(self):
+        """Потеря книги: статус lost, total уменьшается."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        # Имитируем выдачу
+        self.book.available_copies = 2
+        self.book.save()
+
+        loan.mark_lost()
+
+        loan.refresh_from_db()
+        self.book.refresh_from_db()
+        self.assertEqual(loan.status, Loan.STATUS_LOST)
+        self.assertEqual(self.book.total_copies, 2)
+        self.assertEqual(self.book.available_copies, 2)
+
+    def test_mark_lost_twice_raises(self):
+        """Повторная потеря → ValueError."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.mark_lost()
+        with self.assertRaises(ValueError):
+            loan.mark_lost()
+
+    def test_mark_lost_not_issued_raises(self):
+        """Нельзя отметить как потерянную возвращённую книгу."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.status = Loan.STATUS_RETURNED
+        loan.save()
+        with self.assertRaises(ValueError):
+            loan.mark_lost()
+
+
+class LoanAPITest(APITestCase):
+    """Тесты API выдач."""
+
+    def setUp(self):
+        self.librarian = User.objects.create_user(
+            email='librarian@test.com',
+            password='StrongPass123!',
+            role='librarian',
+        )
+        self.reader = User.objects.create_user(
+            email='reader@test.com',
+            password='StrongPass123!',
+            role='reader',
+        )
+        self.other_reader = User.objects.create_user(
+            email='other@test.com',
+            password='StrongPass123!',
+            role='reader',
+        )
+        self.book = Book.objects.create(
+            title='Война и мир',
+            total_copies=3,
+            available_copies=3,
+        )
+        self.list_url = reverse('library:loan-list')
+
+    def test_list_unauthorized(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_as_reader_forbidden(self):
+        """Читатель не может создавать выдачу."""
+        self.client.force_authenticate(user=self.reader)
+        data = {'user': self.reader.id, 'book': self.book.id}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_as_librarian(self):
+        """Библиотекарь создаёт выдачу → 201 + available уменьшается."""
+        self.client.force_authenticate(user=self.librarian)
+        data = {'user': self.reader.id, 'book': self.book.id}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.available_copies, 2)
+
+    def test_create_for_librarian_forbidden(self):
+        """Нельзя выдать книгу библиотекарю."""
+        self.client.force_authenticate(user=self.librarian)
+        data = {'user': self.librarian.id, 'book': self.book.id}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('user', response.data)
+
+    def test_create_no_available_copies(self):
+        """Нет доступных экземпляров → 400."""
+        self.book.available_copies = 0
+        self.book.save()
+        self.client.force_authenticate(user=self.librarian)
+        data = {'user': self.reader.id, 'book': self.book.id}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_duplicate_loan_forbidden(self):
+        """У читателя уже есть активная выдача этой книги → 400."""
+        Loan.objects.create(user=self.reader, book=self.book)
+        self.client.force_authenticate(user=self.librarian)
+        data = {'user': self.reader.id, 'book': self.book.id}
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('book', response.data)
+
+    def test_reader_sees_only_own_loans(self):
+        """Читатель видит только свои выдачи."""
+        Loan.objects.create(user=self.reader, book=self.book)
+        Loan.objects.create(user=self.other_reader, book=self.book)
+
+        self.client.force_authenticate(user=self.reader)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+
+    def test_librarian_sees_all_loans(self):
+        """Библиотекарь видит все выдачи."""
+        Loan.objects.create(user=self.reader, book=self.book)
+        Loan.objects.create(user=self.other_reader, book=self.book)
+
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_return_book_action(self):
+        """Библиотекарь возвращает книгу через @action."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        self.book.available_copies = 2
+        self.book.save()
+
+        url = reverse('library:loan-return-book', args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        loan.refresh_from_db()
+        self.book.refresh_from_db()
+        self.assertEqual(loan.status, Loan.STATUS_RETURNED)
+        self.assertEqual(self.book.available_copies, 3)
+
+    def test_return_book_action_as_reader_forbidden(self):
+        """Читатель не может вернуть книгу."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        url = reverse('library:loan-return-book', args=[loan.id])
+        self.client.force_authenticate(user=self.reader)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_return_book_twice_returns_400(self):
+        """Повторный возврат → 400 (не 500)."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        url = reverse('library:loan-return-book', args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        self.client.post(url)  # первый раз
+        response = self.client.post(url)  # второй
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_mark_lost_action(self):
+        """Библиотекарь отмечает книгу как потерянную."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        self.book.available_copies = 2
+        self.book.save()
+
+        url = reverse('library:loan-mark-lost', args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        loan.refresh_from_db()
+        self.book.refresh_from_db()
+        self.assertEqual(loan.status, Loan.STATUS_LOST)
+        self.assertEqual(self.book.total_copies, 2)
+
+    def test_mark_lost_as_reader_forbidden(self):
+        """Читатель не может отметить как потерянную."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        url = reverse('library:loan-mark-lost', args=[loan.id])
+        self.client.force_authenticate(user=self.reader)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_filter_by_status(self):
+        """Фильтр по статусу."""
+        Loan.objects.create(user=self.reader, book=self.book)
+        loan2 = Loan.objects.create(user=self.other_reader, book=self.book)
+        loan2.status = Loan.STATUS_RETURNED
+        loan2.save()
+
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.get(self.list_url, {'status': 'issued'})
+        self.assertEqual(response.data['count'], 1)
+
+    def test_search_by_book_title(self):
+        """Поиск по названию книги."""
+        Loan.objects.create(user=self.reader, book=self.book)
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.get(self.list_url, {'search': 'Война'})
+        self.assertEqual(response.data['count'], 1)
