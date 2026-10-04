@@ -1,0 +1,1625 @@
+openapi: 3.0.3
+info:
+  title: Library API
+  version: 1.0.0
+  description: API для управления библиотекой (дипломный проект DF1)
+paths:
+  /api/library/authors/:
+    get:
+      operationId: library_authors_list
+      description: CRUD для авторов. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: query
+        name: first_name
+        schema:
+          type: string
+      - in: query
+        name: last_name
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuthorList'
+          description: ''
+    post:
+      operationId: library_authors_create
+      description: CRUD для авторов. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Author'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Author'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Author'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+          description: ''
+  /api/library/authors/{id}/:
+    get:
+      operationId: library_authors_retrieve
+      description: CRUD для авторов. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Автор.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+          description: ''
+    put:
+      operationId: library_authors_update
+      description: CRUD для авторов. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Автор.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Author'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Author'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Author'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+          description: ''
+    patch:
+      operationId: library_authors_partial_update
+      description: CRUD для авторов. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Автор.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAuthor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAuthor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAuthor'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+          description: ''
+    delete:
+      operationId: library_authors_destroy
+      description: CRUD для авторов. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Автор.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/library/books/:
+    get:
+      operationId: library_books_list
+      description: CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь.
+      parameters:
+      - in: query
+        name: authors
+        schema:
+          type: array
+          items:
+            type: integer
+        explode: true
+        style: form
+      - in: query
+        name: available
+        schema:
+          type: boolean
+        description: Только доступные
+      - in: query
+        name: genres
+        schema:
+          type: array
+          items:
+            type: integer
+        explode: true
+        style: form
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: publication_year
+        schema:
+          type: integer
+      - in: query
+        name: publication_year_max
+        schema:
+          type: integer
+        description: Год издания до
+      - in: query
+        name: publication_year_min
+        schema:
+          type: integer
+        description: Год издания от
+      - in: query
+        name: publisher
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookReadList'
+          description: ''
+    post:
+      operationId: library_books_create
+      description: CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь.
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookWrite'
+          description: ''
+  /api/library/books/{id}/:
+    get:
+      operationId: library_books_retrieve
+      description: CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Книга.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookRead'
+          description: ''
+    put:
+      operationId: library_books_update
+      description: CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Книга.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookWrite'
+          description: ''
+    patch:
+      operationId: library_books_partial_update
+      description: CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Книга.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBookWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookWrite'
+          description: ''
+    delete:
+      operationId: library_books_destroy
+      description: CRUD для книг. Читать — все авторизованные, изменять — только библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Книга.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/library/genres/:
+    get:
+      operationId: library_genres_list
+      description: CRUD для жанров. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: query
+        name: name
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGenreList'
+          description: ''
+    post:
+      operationId: library_genres_create
+      description: CRUD для жанров. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Genre'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Genre'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Genre'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+          description: ''
+  /api/library/genres/{id}/:
+    get:
+      operationId: library_genres_retrieve
+      description: CRUD для жанров. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Жанр.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+          description: ''
+    put:
+      operationId: library_genres_update
+      description: CRUD для жанров. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Жанр.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Genre'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Genre'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Genre'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+          description: ''
+    patch:
+      operationId: library_genres_partial_update
+      description: CRUD для жанров. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Жанр.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGenre'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGenre'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGenre'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+          description: ''
+    delete:
+      operationId: library_genres_destroy
+      description: CRUD для жанров. Читать — все авторизованные, изменять — только
+        библиотекарь.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Жанр.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/library/loans/:
+    get:
+      operationId: library_loans_list
+      description: |-
+        CRUD для выдач.
+
+        - Библиотекарь видит все выдачи, может создавать/менять.
+        - Читатель видит только свои выдачи (read-only).
+      parameters:
+      - in: query
+        name: book
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          title: Статус
+          enum:
+          - issued
+          - lost
+          - returned
+        description: |-
+          * `issued` - Выдана
+          * `returned` - Возвращена
+          * `lost` - Потеряна
+      - in: query
+        name: user
+        schema:
+          type: integer
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLoanReadList'
+          description: ''
+    post:
+      operationId: library_loans_create
+      description: |-
+        CRUD для выдач.
+
+        - Библиотекарь видит все выдачи, может создавать/менять.
+        - Читатель видит только свои выдачи (read-only).
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanWrite'
+          description: ''
+  /api/library/loans/{id}/:
+    get:
+      operationId: library_loans_retrieve
+      description: |-
+        CRUD для выдач.
+
+        - Библиотекарь видит все выдачи, может создавать/менять.
+        - Читатель видит только свои выдачи (read-only).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Выдача.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanRead'
+          description: ''
+    put:
+      operationId: library_loans_update
+      description: |-
+        CRUD для выдач.
+
+        - Библиотекарь видит все выдачи, может создавать/менять.
+        - Читатель видит только свои выдачи (read-only).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Выдача.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanWrite'
+          description: ''
+    patch:
+      operationId: library_loans_partial_update
+      description: |-
+        CRUD для выдач.
+
+        - Библиотекарь видит все выдачи, может создавать/менять.
+        - Читатель видит только свои выдачи (read-only).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Выдача.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLoanWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanWrite'
+          description: ''
+    delete:
+      operationId: library_loans_destroy
+      description: |-
+        CRUD для выдач.
+
+        - Библиотекарь видит все выдачи, может создавать/менять.
+        - Читатель видит только свои выдачи (read-only).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Выдача.
+        required: true
+      tags:
+      - library
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/library/loans/{id}/mark_lost/:
+    post:
+      operationId: library_loans_mark_lost_create
+      description: Отметить книгу как потерянную.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Выдача.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanWrite'
+          description: ''
+  /api/library/loans/{id}/return_book/:
+    post:
+      operationId: library_loans_return_book_create
+      description: Вернуть книгу.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Выдача.
+        required: true
+      tags:
+      - library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoanWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanWrite'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      description: Профиль текущего пользователя.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: users_me_update
+      description: Профиль текущего пользователя.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_me_partial_update
+      description: Профиль текущего пользователя.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/register/:
+    post:
+      operationId: users_register_create
+      description: Регистрация нового пользователя (читателя).
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegister'
+          description: ''
+  /api/users/token/:
+    post:
+      operationId: users_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/users/token/refresh/:
+    post:
+      operationId: users_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+components:
+  schemas:
+    Author:
+      type: object
+      description: Сериализатор автора.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 100
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        biography:
+          type: string
+          title: Биография
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          title: Дата рождения
+      required:
+      - first_name
+      - full_name
+      - id
+      - last_name
+    BookRead:
+      type: object
+      description: Сериализатор для чтения книги — с вложенными авторами и жанрами.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название
+          maxLength: 255
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          readOnly: true
+        genres:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+          readOnly: true
+        isbn:
+          type: string
+          nullable: true
+          maxLength: 20
+        publication_year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Год издания
+        publisher:
+          type: string
+          title: Издательство
+          maxLength: 200
+        description:
+          type: string
+          title: Описание
+        total_copies:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          title: Всего экземпляров
+        available_copies:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Доступно экземпляров
+        is_available:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата добавления
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата обновления
+      required:
+      - authors
+      - created_at
+      - genres
+      - id
+      - is_available
+      - title
+      - updated_at
+    BookWrite:
+      type: object
+      description: Сериализатор для создания/обновления книги — принимает ID авторов
+        и жанров.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название
+          maxLength: 255
+        authors:
+          type: array
+          items:
+            type: integer
+            title: Авторы
+          title: Авторы
+        genres:
+          type: array
+          items:
+            type: integer
+            title: Жанры
+          title: Жанры
+        isbn:
+          type: string
+          nullable: true
+          maxLength: 20
+        publication_year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Год издания
+        publisher:
+          type: string
+          title: Издательство
+          maxLength: 200
+        description:
+          type: string
+          title: Описание
+        total_copies:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          title: Всего экземпляров
+        available_copies:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Доступно экземпляров
+      required:
+      - authors
+      - genres
+      - id
+      - title
+    Genre:
+      type: object
+      description: Сериализатор жанра.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 100
+        description:
+          type: string
+          title: Описание
+      required:
+      - id
+      - name
+    LoanRead:
+      type: object
+      description: Сериализатор для чтения выдачи — с вложенными данными.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        book:
+          allOf:
+          - $ref: '#/components/schemas/BookRead'
+          readOnly: true
+        loan_date:
+          type: string
+          format: date
+          readOnly: true
+          title: Дата выдачи
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          title: Плановая дата возврата
+        return_date:
+          type: string
+          format: date
+          nullable: true
+          title: Дата возврата
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус
+        effective_status:
+          type: string
+          readOnly: true
+        is_overdue:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата обновления
+      required:
+      - book
+      - created_at
+      - effective_status
+      - id
+      - is_overdue
+      - loan_date
+      - updated_at
+      - user
+    LoanWrite:
+      type: object
+      description: Сериализатор для создания/обновления выдачи — принимает ID.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          title: Читатель
+        book:
+          type: integer
+          title: Книга
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          title: Плановая дата возврата
+        return_date:
+          type: string
+          format: date
+          nullable: true
+          title: Дата возврата
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус
+      required:
+      - book
+      - id
+      - user
+    PaginatedAuthorList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+    PaginatedBookReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookRead'
+    PaginatedGenreList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+    PaginatedLoanReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoanRead'
+    PatchedAuthor:
+      type: object
+      description: Сериализатор автора.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 100
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        biography:
+          type: string
+          title: Биография
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          title: Дата рождения
+    PatchedBookWrite:
+      type: object
+      description: Сериализатор для создания/обновления книги — принимает ID авторов
+        и жанров.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название
+          maxLength: 255
+        authors:
+          type: array
+          items:
+            type: integer
+            title: Авторы
+          title: Авторы
+        genres:
+          type: array
+          items:
+            type: integer
+            title: Жанры
+          title: Жанры
+        isbn:
+          type: string
+          nullable: true
+          maxLength: 20
+        publication_year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Год издания
+        publisher:
+          type: string
+          title: Издательство
+          maxLength: 200
+        description:
+          type: string
+          title: Описание
+        total_copies:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          title: Всего экземпляров
+        available_copies:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Доступно экземпляров
+    PatchedGenre:
+      type: object
+      description: Сериализатор жанра.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 100
+        description:
+          type: string
+          title: Описание
+    PatchedLoanWrite:
+      type: object
+      description: Сериализатор для создания/обновления выдачи — принимает ID.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          title: Читатель
+        book:
+          type: integer
+          title: Книга
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          title: Плановая дата возврата
+        return_date:
+          type: string
+          format: date
+          nullable: true
+          title: Дата возврата
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус
+    PatchedUser:
+      type: object
+      description: Сериализатор для просмотра и обновления профиля.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+          title: Роль
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активный
+          description: Отметьте, если пользователь должен считаться активным. Уберите
+            эту отметку вместо удаления учётной записи.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+    RoleEnum:
+      enum:
+      - librarian
+      - reader
+      type: string
+      description: |-
+        * `librarian` - Библиотекарь
+        * `reader` - Читатель
+    StatusEnum:
+      enum:
+      - issued
+      - returned
+      - lost
+      type: string
+      description: |-
+        * `issued` - Выдана
+        * `returned` - Возвращена
+        * `lost` - Потеряна
+    TokenObtainPair:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - email
+      - password
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      description: Сериализатор для просмотра и обновления профиля.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+          title: Роль
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активный
+          description: Отметьте, если пользователь должен считаться активным. Уберите
+            эту отметку вместо удаления учётной записи.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+      required:
+      - date_joined
+      - email
+      - id
+      - is_active
+      - role
+    UserRegister:
+      type: object
+      description: Сериализатор для регистрации нового пользователя.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        password_confirm:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          title: Роль
+      required:
+      - email
+      - id
+      - password
+      - password_confirm
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
