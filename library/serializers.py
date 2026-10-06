@@ -115,8 +115,7 @@ class BookWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "available_copies": (
-                        "Доступных экземпляров не может быть "
-                        "больше общего количества."
+                        "Доступных экземпляров не может быть " "больше общего количества."
                     ),
                 }
             )
