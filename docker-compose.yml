@@ -34,7 +34,7 @@ services:
         condition: service_healthy
     command: >
       sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+             gunicorn library_api.wsgi:application --bind 0.0.0.0:8000 --workers 3"
 
 volumes:
   postgres_data:
