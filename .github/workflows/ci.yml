@@ -97,3 +97,22 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t df1_library_api:test .
+
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    needs: [ lint, test, build ]
+    if: github.ref == 'refs/heads/feature/diploma' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/df1_library_api_diploma
+            git pull origin feature/diploma
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate
