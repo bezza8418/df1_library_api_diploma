@@ -4,7 +4,7 @@ from rest_framework import permissions
 class IsLibrarian(permissions.BasePermission):
     """Доступ только для библиотекарей (и суперпользователей)."""
 
-    message = 'Действие доступно только библиотекарю.'
+    message = "Действие доступно только библиотекарю."
 
     def has_permission(self, request, view):
         return bool(
@@ -17,14 +17,10 @@ class IsLibrarian(permissions.BasePermission):
 class IsReader(permissions.BasePermission):
     """Доступ только для читателей."""
 
-    message = 'Действие доступно только читателю.'
+    message = "Действие доступно только читателю."
 
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.is_reader
-        )
+        return bool(request.user and request.user.is_authenticated and request.user.is_reader)
 
 
 class IsLibrarianOrReadOnly(permissions.BasePermission):
@@ -33,7 +29,7 @@ class IsLibrarianOrReadOnly(permissions.BasePermission):
     Читатель — только безопасные методы (GET, HEAD, OPTIONS).
     """
 
-    message = 'Изменение доступно только библиотекарю.'
+    message = "Изменение доступно только библиотекарю."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -51,7 +47,7 @@ class IsOwnerOrLibrarian(permissions.BasePermission):
     или библиотекарю / суперпользователю.
     """
 
-    message = 'Доступ только к своим объектам или для библиотекаря.'
+    message = "Доступ только к своим объектам или для библиотекаря."
 
     def has_object_permission(self, request, view, obj):
         if not request.user or not request.user.is_authenticated:
@@ -61,4 +57,4 @@ class IsOwnerOrLibrarian(permissions.BasePermission):
             return True
 
         # Предполагаем, что у объекта есть поле user
-        return getattr(obj, 'user', None) == request.user
+        return getattr(obj, "user", None) == request.user
