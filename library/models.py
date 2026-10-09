@@ -179,22 +179,20 @@ class Loan(models.Model):
         from django.db import transaction
 
         if self.status != self.STATUS_ISSUED:
-            raise ValueError(
-                f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".'
-            )
+            raise ValueError(f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".')
 
         with transaction.atomic():
             book = Book.objects.select_for_update().get(pk=self.book_id)
 
             self.status = self.STATUS_RETURNED
             self.return_date = timezone.now().date()
-            self.save(update_fields=['status', 'return_date', 'updated_at'])
+            self.save(update_fields=["status", "return_date", "updated_at"])
 
             book.available_copies = min(
                 book.available_copies + 1,
                 book.total_copies,
             )
-            book.save(update_fields=['available_copies', 'updated_at'])
+            book.save(update_fields=["available_copies", "updated_at"])
 
     def mark_lost(self):
         """Отметить книгу как потерянную."""
@@ -209,11 +207,11 @@ class Loan(models.Model):
             book = Book.objects.select_for_update().get(pk=self.book_id)
 
             self.status = self.STATUS_LOST
-            self.save(update_fields=['status', 'updated_at'])
+            self.save(update_fields=["status", "updated_at"])
 
             new_total = max(book.total_copies - 1, 0)
             new_available = min(book.available_copies, new_total)
 
             book.total_copies = new_total
             book.available_copies = new_available
-            book.save(update_fields=['total_copies', 'available_copies', 'updated_at'])
+            book.save(update_fields=["total_copies", "available_copies", "updated_at"])
