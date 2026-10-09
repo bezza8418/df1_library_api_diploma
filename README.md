@@ -89,8 +89,8 @@
 |GET/POST   |/api/library/books/   |Книги   |
 |GET/POST   |/api/library/loans/   |Выдачи   |
 |POST   |/api/library/loans/{id}/return_book/   |Вернуть книгу   |
-|POST   |/api/library/loans/{id}/mark_lost/   |Отметить как потерянную   |		
-		
+|POST   |/api/library/loans/{id}/mark_lost/   |Отметить как потерянную   |
+
 
 ### Тесты
 

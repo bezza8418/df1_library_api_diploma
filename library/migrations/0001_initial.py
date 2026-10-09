@@ -7,37 +7,53 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Genre',
+            name="Genre",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True, verbose_name='Название')),
-                ('description', models.TextField(blank=True, verbose_name='Описание')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True, verbose_name="Название")),
+                ("description", models.TextField(blank=True, verbose_name="Описание")),
             ],
             options={
-                'verbose_name': 'Жанр',
-                'verbose_name_plural': 'Жанры',
-                'ordering': ['name'],
+                "verbose_name": "Жанр",
+                "verbose_name_plural": "Жанры",
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='Author',
+            name="Author",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('first_name', models.CharField(max_length=100, verbose_name='Имя')),
-                ('last_name', models.CharField(max_length=100, verbose_name='Фамилия')),
-                ('biography', models.TextField(blank=True, verbose_name='Биография')),
-                ('birth_date', models.DateField(blank=True, null=True, verbose_name='Дата рождения')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("first_name", models.CharField(max_length=100, verbose_name="Имя")),
+                ("last_name", models.CharField(max_length=100, verbose_name="Фамилия")),
+                ("biography", models.TextField(blank=True, verbose_name="Биография")),
+                (
+                    "birth_date",
+                    models.DateField(blank=True, null=True, verbose_name="Дата рождения"),
+                ),
             ],
             options={
-                'verbose_name': 'Автор',
-                'verbose_name_plural': 'Авторы',
-                'ordering': ['last_name', 'first_name'],
-                'constraints': [models.UniqueConstraint(fields=('first_name', 'last_name'), name='unique_author_full_name')],
+                "verbose_name": "Автор",
+                "verbose_name_plural": "Авторы",
+                "ordering": ["last_name", "first_name"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("first_name", "last_name"), name="unique_author_full_name"
+                    )
+                ],
             },
         ),
     ]

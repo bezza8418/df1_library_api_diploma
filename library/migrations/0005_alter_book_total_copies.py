@@ -7,13 +7,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0004_alter_loan_due_date'),
+        ("library", "0004_alter_loan_due_date"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='book',
-            name='total_copies',
-            field=models.PositiveIntegerField(default=1, validators=[django.core.validators.MinValueValidator(0)], verbose_name='Всего экземпляров'),
+            model_name="book",
+            name="total_copies",
+            field=models.PositiveIntegerField(
+                default=1,
+                validators=[django.core.validators.MinValueValidator(0)],
+                verbose_name="Всего экземпляров",
+            ),
         ),
     ]

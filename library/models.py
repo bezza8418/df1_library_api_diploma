@@ -73,7 +73,7 @@ class Book(models.Model):
     publisher = models.CharField("Издательство", max_length=200, blank=True)
     description = models.TextField("Описание", blank=True)
     total_copies = models.PositiveIntegerField(
-        'Всего экземпляров',
+        "Всего экземпляров",
         default=1,
         validators=[MinValueValidator(0)],
     )
