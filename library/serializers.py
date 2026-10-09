@@ -151,41 +151,49 @@ class LoanReadSerializer(serializers.ModelSerializer):
 
 
 class LoanWriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания/обновления выдачи — принимает ID."""
+    """Сериализатор для создания выдачи — принимает ID пользователя и книги."""
 
     class Meta:
         model = Loan
         fields = (
-            "id",
-            "user",
-            "book",
-            "due_date",
-            "return_date",
-            "status",
+            'id',
+            'user',
+            'book',
+            'due_date',
+            'status',
+            'return_date',
+        )
+        read_only_fields = (
+            'id',
+            'status',
+            'return_date',
         )
 
     def validate_user(self, value):
         """Выдавать можно только читателям."""
-        if value.role != "reader":
-            raise serializers.ValidationError("Выдача книги возможна только читателю.")
+        if value.role != 'reader':
+            raise serializers.ValidationError(
+                'Выдача книги возможна только читателю.'
+            )
         return value
 
     def validate(self, attrs):
         """Проверки при создании выдачи."""
-        # При обновлении не проверяем
+        # При обновлении запрещаем менять book и user
         if self.instance is not None:
-            return attrs
+            raise serializers.ValidationError(
+                'Редактирование выдачи запрещено. '
+                'Используйте действия return_book и mark_lost.'
+            )
 
-        book = attrs.get("book")
-        user = attrs.get("user")
+        book = attrs.get('book')
+        user = attrs.get('user')
 
         # Проверка: есть ли доступные экземпляры
         if book and book.available_copies < 1:
-            raise serializers.ValidationError(
-                {
-                    "book": "Нет доступных экземпляров этой книги.",
-                }
-            )
+            raise serializers.ValidationError({
+                'book': 'Нет доступных экземпляров этой книги.',
+            })
 
         # Проверка: нет ли у читателя активной выдачи этой же книги
         if book and user:
@@ -195,10 +203,8 @@ class LoanWriteSerializer(serializers.ModelSerializer):
                 status=Loan.STATUS_ISSUED,
             ).exists()
             if active_exists:
-                raise serializers.ValidationError(
-                    {
-                        "book": "У этого читателя уже есть активная выдача данной книги.",
-                    }
-                )
+                raise serializers.ValidationError({
+                    'book': 'У этого читателя уже есть активная выдача данной книги.',
+                })
 
         return attrs
