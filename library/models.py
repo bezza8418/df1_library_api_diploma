@@ -175,46 +175,45 @@ class Loan(models.Model):
         return self.status
 
     def return_book(self):
-        """
-        Вернуть книгу.
-        - Проверяет, что выдача активна.
-        - Ставит return_date = сегодня.
-        - Меняет статус на 'returned'.
-        - Увеличивает available_copies у книги.
-        """
+        """Вернуть книгу."""
+        from django.db import transaction
+
         if self.status != self.STATUS_ISSUED:
-            raise ValueError(f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".')
+            raise ValueError(
+                f'Нельзя вернуть выдачу со статусом "{self.get_status_display()}".'
+            )
 
-        self.status = self.STATUS_RETURNED
-        self.return_date = timezone.now().date()
-        self.save(update_fields=["status", "return_date", "updated_at"])
+        with transaction.atomic():
+            book = Book.objects.select_for_update().get(pk=self.book_id)
 
-        book = self.book
-        book.available_copies = min(
-            book.available_copies + 1,
-            book.total_copies,
-        )
-        book.save(update_fields=["available_copies", "updated_at"])
+            self.status = self.STATUS_RETURNED
+            self.return_date = timezone.now().date()
+            self.save(update_fields=['status', 'return_date', 'updated_at'])
+
+            book.available_copies = min(
+                book.available_copies + 1,
+                book.total_copies,
+            )
+            book.save(update_fields=['available_copies', 'updated_at'])
 
     def mark_lost(self):
-        """
-        Отметить книгу как потерянную.
-        - Проверяет, что выдача активна.
-        - Меняет статус на 'lost'.
-        - Уменьшает total на 1, available обрезается до нового total.
-        """
+        """Отметить книгу как потерянную."""
+        from django.db import transaction
+
         if self.status != self.STATUS_ISSUED:
             raise ValueError(
                 f'Нельзя отметить как потерянную выдачу со статусом "{self.get_status_display()}".'
             )
 
-        self.status = self.STATUS_LOST
-        self.save(update_fields=["status", "updated_at"])
+        with transaction.atomic():
+            book = Book.objects.select_for_update().get(pk=self.book_id)
 
-        book = self.book
-        new_total = max(book.total_copies - 1, 0)
-        new_available = min(book.available_copies, new_total)
+            self.status = self.STATUS_LOST
+            self.save(update_fields=['status', 'updated_at'])
 
-        book.total_copies = new_total
-        book.available_copies = new_available
-        book.save(update_fields=["total_copies", "available_copies", "updated_at"])
+            new_total = max(book.total_copies - 1, 0)
+            new_available = min(book.available_copies, new_total)
+
+            book.total_copies = new_total
+            book.available_copies = new_available
+            book.save(update_fields=['total_copies', 'available_copies', 'updated_at'])

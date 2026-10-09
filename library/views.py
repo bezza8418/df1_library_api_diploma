@@ -1,10 +1,8 @@
-from rest_framework import status as http_status
-from rest_framework import viewsets
+from django.db import transaction
+from rest_framework import serializers, status as http_status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from users.permissions import IsLibrarian, IsLibrarianOrReadOnly
-
 from .filters import BookFilter
 from .models import Author, Book, Genre, Loan
 from .serializers import (
@@ -94,11 +92,27 @@ class LoanViewSet(viewsets.ModelViewSet):
         return LoanWriteSerializer
 
     def perform_create(self, serializer):
-        """При создании выдачи уменьшаем available_copies у книги."""
-        loan = serializer.save()
-        book = loan.book
-        book.available_copies = max(book.available_copies - 1, 0)
-        book.save(update_fields=["available_copies", "updated_at"])
+        """При создании выдачи уменьшаем available_copies у книги атомарно."""
+        with transaction.atomic():
+            book = Book.objects.select_for_update().get(
+                pk=serializer.validated_data['book'].pk
+            )
+            if book.available_copies < 1:
+                raise serializers.ValidationError({
+                    'book': 'Нет доступных экземпляров этой книги.'
+                })
+            loan = serializer.save()
+            book.available_copies -= 1
+            book.save(update_fields=['available_copies', 'updated_at'])
+
+    def perform_destroy(self, instance):
+        """Удалять можно только завершённые выдачи (returned/lost)."""
+        if instance.status == Loan.STATUS_ISSUED:
+            raise serializers.ValidationError({
+                'detail': 'Нельзя удалить активную выдачу. '
+                          'Сначала верните книгу или отметьте её как потерянную.'
+            })
+        instance.delete()
 
     @action(detail=True, methods=["post"], permission_classes=[IsLibrarian])
     def return_book(self, request, pk=None):
