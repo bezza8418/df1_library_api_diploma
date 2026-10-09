@@ -769,3 +769,79 @@ class LoanAPITest(APITestCase):
         self.client.force_authenticate(user=self.librarian)
         response = self.client.get(self.list_url, {"search": "Война"})
         self.assertEqual(response.data["count"], 1)
+
+
+# ==================== НЕДОПУСТИМЫЕ ОПЕРАЦИИ ====================
+
+
+class LoanForbiddenOperationsTest(APITestCase):
+    """Тесты запрещённых операций с выдачами."""
+
+    def setUp(self):
+        self.librarian = User.objects.create_user(
+            email="librarian@test.com",
+            password="StrongPass123!",
+            role="librarian",
+        )
+        self.reader = User.objects.create_user(
+            email="reader@test.com",
+            password="StrongPass123!",
+            role="reader",
+        )
+        self.book = Book.objects.create(
+            title="Война и мир",
+            total_copies=3,
+            available_copies=3,
+        )
+
+    def test_cannot_patch_status(self):
+        """PATCH статуса запрещён."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        url = reverse("library:loan-detail", args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.patch(url, {"status": "returned"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cannot_patch_return_date(self):
+        """PATCH return_date запрещён."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        url = reverse("library:loan-detail", args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.patch(url, {"return_date": "2026-12-31"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cannot_delete_active_loan(self):
+        """Активную выдачу удалить нельзя."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        url = reverse("library:loan-detail", args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Loan.objects.filter(pk=loan.id).exists())
+
+    def test_can_delete_returned_loan(self):
+        """Возвращённую выдачу удалить можно."""
+        loan = Loan.objects.create(user=self.reader, book=self.book)
+        loan.status = Loan.STATUS_RETURNED
+        loan.save()
+        url = reverse("library:loan-detail", args=[loan.id])
+        self.client.force_authenticate(user=self.librarian)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_mark_lost_last_copy(self):
+        """Можно списать последний экземпляр."""
+        book = Book.objects.create(
+            title="Последний экземпляр",
+            total_copies=1,
+            available_copies=1,
+        )
+        loan = Loan.objects.create(user=self.reader, book=book)
+        book.available_copies = 0
+        book.save()
+
+        loan.mark_lost()
+        book.refresh_from_db()
+
+        self.assertEqual(book.total_copies, 0)
+        self.assertEqual(book.available_copies, 0)
