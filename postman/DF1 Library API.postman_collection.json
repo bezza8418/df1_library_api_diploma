@@ -1,0 +1,665 @@
+{
+  "info": {
+    "_postman_id": "63dce722-ef66-4621-9562-95b7974adfa9",
+    "name": "DF1 Library API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58683153",
+    "_collection_link": "https://go.postman.co/collection/58683153-63dce722-ef66-4621-9562-95b7974adfa9?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01. Auth",
+      "item": [
+        {
+          "name": "Токен читателя",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();\r\nif (response.access) {\r\n    pm.environment.set(\"access_token\", response.access);\r\n}\r\nif (response.refresh) {\r\n    pm.environment.set(\"refresh_token\", response.refresh);\r\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"reader3@example.com\",\r\n  \"password\": \"StrongPass123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/token/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "token",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Токен библиотекаря",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();\r\nif (response.access) {\r\n    pm.environment.set(\"librarian_token\", response.access);\r\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"librarian@example.com\",\r\n  \"password\": \"StrongPass123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/token/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "token",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02. Users",
+      "item": [
+        {
+          "name": "Регистрация",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"reader_test@example.com\",\r\n  \"password\": \"StrongPass123!\",\r\n  \"password_confirm\": \"StrongPass123!\",\r\n  \"first_name\": \"Тест\",\r\n  \"last_name\": \"Читателев\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/register/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Мой профиль",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03. Authors",
+      "item": [
+        {
+          "name": "Список авторов",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/authors/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "authors",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать автора (библиотекарь)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"first_name\": \"Сергей\",\r\n  \"last_name\": \"Есенин\",\r\n  \"biography\": \"Русский поэт\",\r\n  \"birth_date\": \"1895-10-03\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/authors/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "authors",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать автора (читатель)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"first_name\": \"Анна\",\r\n  \"last_name\": \"Ахматова\",\r\n  \"biography\": \"Русская поэтесса\",\r\n  \"birth_date\": \"1889-06-23\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/authors/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "authors",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04. Genres",
+      "item": [
+        {
+          "name": "Список жанров",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/genres/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "genres",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать жанр (библиотекарь)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Приключения\",\r\n  \"description\": \"Приключенческая литература\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/genres/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "genres",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05. Books",
+      "item": [
+        {
+          "name": "Список книг",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/books/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Книги — поиск",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/books/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Книги — фильтры",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/books/?publication_year_min=1900&publication_year_max=2000&available=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "publication_year_min",
+                  "value": "1900"
+                },
+                {
+                  "key": "publication_year_max",
+                  "value": "2000"
+                },
+                {
+                  "key": "available",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать книгу (библиотекарь)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Собачье сердце\",\r\n  \"authors\": [2],\r\n  \"genres\": [7],\r\n  \"isbn\": \"978-5-04-116563-11\",\r\n  \"publication_year\": 1925,\r\n  \"publisher\": \"Тестовое издательство\",\r\n  \"description\": \"Повесть Михаила Булгакова\",\r\n  \"total_copies\": 2,\r\n  \"available_copies\": 2\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/books/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать книгу — плохой ISBN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Книга с плохим ISBN\",\r\n  \"authors\": [1],\r\n  \"genres\": [1],\r\n  \"isbn\": \"abc123\",\r\n  \"total_copies\": 1,\r\n  \"available_copies\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/books/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать книгу — год в будущем",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Книга из будущего\",\r\n  \"authors\": [1],\r\n  \"genres\": [1],\r\n  \"publication_year\": 2099,\r\n  \"total_copies\": 1,\r\n  \"available_copies\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/books/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Создать книгу — available > total",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Книга из будущего\",\r\n  \"authors\": [1],\r\n  \"genres\": [1],\r\n  \"publication_year\": 2099,\r\n  \"total_copies\": 1,\r\n  \"available_copies\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/books/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "books",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06. Loans",
+      "item": [
+        {
+          "name": "Список выдач (библиотекарь)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/loans/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "loans",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Выдать книгу (библиотекарь)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"user\": {{reader_id}},\r\n  \"book\": {{book_id}}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/library/loans/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "loans",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Вернуть книгу (библиотекарь)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/loans/2/return_book/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "loans",
+                "2",
+                "return_book",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Отметить как потерянную",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarian_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/library/loans/2/mark_lost/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "library",
+                "loans",
+                "2",
+                "mark_lost",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
