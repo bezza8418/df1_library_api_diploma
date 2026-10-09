@@ -83,10 +83,10 @@ class LoanViewSet(viewsets.ModelViewSet):
     ordering = ("-loan_date", "-id")
 
     def get_queryset(self):
-        """Читатель видит только свои выдачи, библиотекарь — все."""
+        """Читатель видит только свои выдачи, библиотекарь и суперпользователь — все."""
         queryset = Loan.objects.select_related("user", "book").all()
         user = self.request.user
-        if user.is_authenticated and user.is_reader:
+        if user.is_authenticated and not user.is_superuser and user.is_reader:
             return queryset.filter(user=user)
         return queryset
 
